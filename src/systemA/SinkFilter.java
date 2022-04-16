@@ -38,7 +38,7 @@ public class SinkFilter extends FilterFramework
 		*************************************************************************************/
 
 		Calendar TimeStamp = Calendar.getInstance();
-		SimpleDateFormat TimeStampFormat = new SimpleDateFormat("yyyy MM dd::hh:mm:ss:SSS");
+		SimpleDateFormat TimeStampFormat = new SimpleDateFormat("yyyy:dd:HH:mm:ss:SSS");
 
 		int MeasurementLength = 8;		// This is the length of all measurements (including time) in bytes
 		int IdLength = 4;				// This is the length of IDs in the byte stream
@@ -49,6 +49,11 @@ public class SinkFilter extends FilterFramework
 		long measurement;				// This is the word used to store all measurements - conversions are illustrated.
 		int id;							// This is the measurement id
 		int i;							// This is a loop counter
+
+		String outputLine = "";
+
+		boolean readTemperature = false;
+		boolean readAltitude = false;
 
 		/*************************************************************
 		*	First we announce to the world that we are alive...
@@ -127,6 +132,8 @@ public class SinkFilter extends FilterFramework
 				{
 					TimeStamp.setTimeInMillis(measurement);
 
+					outputLine += TimeStampFormat.format(TimeStamp.getTime());
+
 				} // if
 
 				/****************************************************************************
@@ -139,13 +146,24 @@ public class SinkFilter extends FilterFramework
 				// in.
 				****************************************************************************/
 
-				if ( id == 4 )
+				else if ( id == 4 )
 				{
-					System.out.print( TimeStampFormat.format(TimeStamp.getTime()) + " ID = " + id + " " + Double.longBitsToDouble(measurement) );
-
+					outputLine += " ID = " + id + " " + Double.longBitsToDouble(measurement);
+					// System.out.print( "\n" + this.getName() + " " + TimeStampFormat.format(TimeStamp.getTime()) + " ID = " + id + " " + Double.longBitsToDouble(measurement) );
+					readTemperature = true;
 				} // if
 
-				System.out.print( "\n" );
+				else if ( id == 2 ) {
+					outputLine += " ID = " + id + " " + Double.longBitsToDouble(measurement);
+					readAltitude = true;
+				}
+
+				if (readTemperature && readAltitude) {
+					System.out.println(outputLine);
+					readTemperature = false;
+					readAltitude = false;
+					outputLine = "";
+				}
 
 			} // try
 
