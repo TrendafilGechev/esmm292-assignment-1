@@ -44,13 +44,13 @@ public class SinkFilter extends Filter {
         Calendar TimeStamp = Calendar.getInstance();
         SimpleDateFormat TimeStampFormat = new SimpleDateFormat("yyyy:dd:HH:mm:ss");
 
+        DecimalFormat df = new DecimalFormat("#.#####");
+        df.setRoundingMode(RoundingMode.HALF_UP);
+
         StringBuilder outputLine = new StringBuilder();
 
         boolean readTemperature = false;
         boolean readAltitude = false;
-
-        DecimalFormat df = new DecimalFormat("#.#####");
-        df.setRoundingMode(RoundingMode.HALF_UP);
 
         /*************************************************************
          *	First we announce to the world that we are alive...

@@ -43,7 +43,8 @@ public class SourceFilter extends Filter {
             while (true) {
                 readId();
                 readMeasurement();
-                if (id == Ids.Altitude.ordinal() || id == Ids.Temperature.ordinal()) {
+
+                if (id == Ids.Altitude.ordinal() || id == Ids.Temperature.ordinal() || id == Ids.Time.ordinal()) {
                     writeId(idData);
                     writeMeasurement(measurementData);
                 } else {
