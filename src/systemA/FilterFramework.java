@@ -72,7 +72,7 @@ public class FilterFramework extends Thread
 	*
 	****************************************************************************/
 
-	class EndOfStreamException extends Exception {
+	protected class EndOfStreamException extends Exception {
 
 		EndOfStreamException () { super(); }
 
@@ -96,7 +96,7 @@ public class FilterFramework extends Thread
 	*
 	****************************************************************************/
 
-	void Connect( FilterFramework Filter )
+	public void Connect( FilterFramework Filter )
 	{
 		try
 		{
@@ -127,7 +127,7 @@ public class FilterFramework extends Thread
 	*
 	****************************************************************************/
 
-	byte ReadFilterInputPort() throws EndOfStreamException
+	public byte ReadFilterInputPort() throws EndOfStreamException
 	{
 		byte datum = 0;
 
@@ -208,7 +208,7 @@ public class FilterFramework extends Thread
 	*
 	****************************************************************************/
 
-	void WriteFilterOutputPort(byte datum)
+	public void WriteFilterOutputPort(byte datum)
 	{
 		try
 		{
@@ -272,7 +272,7 @@ public class FilterFramework extends Thread
 	*
 	****************************************************************************/
 
-	void ClosePorts()
+	public void ClosePorts()
 	{
 		try
 		{
