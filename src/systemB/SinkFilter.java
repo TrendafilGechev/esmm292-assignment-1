@@ -27,6 +27,7 @@ package systemB;
 
 import systemA.Filter;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
@@ -50,6 +51,7 @@ public class SinkFilter extends Filter {
 		df.setRoundingMode(RoundingMode.HALF_UP);
 
 		StringBuilder outputLine = new StringBuilder();
+		StringBuilder outputLinePressure = new StringBuilder();
 
 		boolean readTemperature = false;
 		boolean readAltitude = false;
@@ -60,6 +62,11 @@ public class SinkFilter extends Filter {
 		 **************************************************************/
 
 		System.out.print("\n" + this.getName() + "::Sink Reading " + "\n");
+		outputLine.append("Time: ").append("\t\t\t\t\t\t\t\t").append("Meters: ").append("\t\t\t\t\t").append("Pressure (psi): ").append("\t\t\t").append("Temperature (C): ").append("\t\t\t\t\t");
+		outputLine.append("\n");
+
+		outputLinePressure.append("Time: ").append("\t\t\t\t\t\t\t\t").append("Pressure (psi): ").append("\t\t\t");
+		outputLinePressure.append("\n");
 
 		while (true) {
 			try {
@@ -79,10 +86,16 @@ public class SinkFilter extends Filter {
 				 // illustrated below.
 				 ****************************************************************************/
 
+				String formattedTime;
+				String formattedTemp;
+				String formattedAltitude;
+				String formattedPressure;
 				if (id == Ids.Time.ordinal()) {
 					TimeStamp.setTimeInMillis(measurement);
-					outputLine.append(TimeStampFormat.format(TimeStamp.getTime()));
-				} // if
+					formattedTime = TimeStampFormat.format(TimeStamp.getTime());
+					outputLine.append(formattedTime).append("\t\t\t\t\t");
+					outputLinePressure.append(formattedTime).append("\t\t\t\t\t");
+				}
 
 				/****************************************************************************
 				 // Here we pick up a measurement (ID = 4 in this case), but you can pick up
@@ -96,17 +109,22 @@ public class SinkFilter extends Filter {
 
 				else if (id == Ids.Temperature.ordinal()) {
 					double temp = Double.longBitsToDouble(measurement);
-					outputLine.append(" ID = ").append(id).append(" C: ").append(df.format(temp));
+					formattedTemp = df.format(temp);
+					outputLine.append(formattedTemp).append("\t\t\t\t\t");
 					readTemperature = true;
-				} // if
+				}
 
 				else if (id == Ids.Altitude.ordinal()) {
 					double altitude = Double.longBitsToDouble(measurement);
-					outputLine.append(" ID = ").append(id).append(" meters: ").append(df.format(altitude));
+					formattedAltitude = df.format(altitude);
+					outputLine.append(formattedAltitude).append("\t\t\t\t\t");
 					readAltitude = true;
-				} else if (id == Ids.Pressure.ordinal()) {
+				}
+
+				else if (id == Ids.Pressure.ordinal()) {
 					double pressure = Double.longBitsToDouble(measurement);
-					outputLine.append(" ID = ").append(id).append(" psi: ").append(df.format(pressure));
+					formattedPressure = df.format(pressure);
+					formatPressureWildPoints(outputLine, outputLinePressure, formattedPressure);
 					readPressure = true;
 				}
 
@@ -115,7 +133,11 @@ public class SinkFilter extends Filter {
 					readTemperature = false;
 					readAltitude = false;
 					readPressure = false;
-					outputLine = new StringBuilder();
+					outputLine.append("\n");
+					outputLinePressure.append("\n");
+					writeOutputToFile(outputLine, "OutputB.txt");
+					writeOutputToFile(outputLinePressure, "OutputPressure.txt");
+
 				}
 			} // try
 
@@ -130,5 +152,36 @@ public class SinkFilter extends Filter {
 				break;
 			} // catch
 		} // while
-	} // run
+	}// run
+
+	private void formatPressureWildPoints(StringBuilder outputLine, StringBuilder outputlinePressure, String formattedPressure) {
+		double formattedPressureDouble = Double.parseDouble(formattedPressure);
+		if (formattedPressureDouble < 0) {
+			formattedPressureDouble = Math.abs(formattedPressureDouble);
+			outputlinePressure.append(formattedPressureDouble);
+			outputLine.append(Math.abs(formattedPressureDouble)).append("*").append("\t\t\t\t\t");
+		} else {
+			outputLine.append(formattedPressure).append("\t\t\t\t\t");
+			outputlinePressure.delete(outputlinePressure.length()-22, outputlinePressure.length());
+		}
+	}
+
+	private void writeOutputToFile(StringBuilder outputLine, String fileName) {
+		FileWriter writer = null;
+		try {
+			writer = new FileWriter(fileName);
+			System.out.print("\n" + this.getName() + "::Sink Writing to file" + "\n" + outputLine.toString());
+			writer.write(outputLine.toString());
+		} catch (IOException e) {
+			System.err.println("IO Error in SinkFilter: " + e.getMessage());
+		}
+		try {
+			if (writer != null) {
+				System.out.print("\n" + this.getName() + "::Sink Closing writer" + "\n");
+				writer.close();
+			}
+		} catch (IOException e) {
+			System.err.println("IO Error in SinkFilter: " + e.getMessage());
+		}
+	}
 } // SingFilter
