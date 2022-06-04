@@ -58,7 +58,7 @@ public class SinkFilter extends Filter {
          **************************************************************/
 
         System.out.print("\n" + this.getName() + "::Sink Reading " + "\n");
-        outputLine.append("Time ").append("\t"+"\t"+"\t"+"\t"+"\t"+"\t"+"\t"+"\t").append("Meters: ").append("\t"+"\t"+"\t"+"\t"+"\t").append("Temperature (C): ").append("\t"+"\t"+"\t"+"\t"+"\t");
+        outputLine.append("Time: ").append("\t"+"\t"+"\t"+"\t"+"\t"+"\t"+"\t"+"\t").append("Meters: ").append("\t"+"\t"+"\t"+"\t"+"\t").append("Temperature (C): ").append("\t"+"\t"+"\t"+"\t"+"\t");
         outputLine.append("\n");
         while (true) {
             try {
