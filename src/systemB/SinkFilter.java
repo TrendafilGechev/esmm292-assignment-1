@@ -25,6 +25,8 @@
 ******************************************************************************************************************/
 package systemB;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;						// This class is used to interpret time words
 import java.text.SimpleDateFormat;		// This class is used to format and write time in a string format.
 
@@ -38,6 +40,7 @@ public class SinkFilter extends FilterFramework
 		*	to the terminal.
 		*************************************************************************************/
 
+		Instant start = Instant.now();
 		Calendar TimeStamp = Calendar.getInstance();
 		SimpleDateFormat TimeStampFormat = new SimpleDateFormat("yyyy:dd:HH:mm:ss");
 
@@ -159,7 +162,7 @@ public class SinkFilter extends FilterFramework
 			catch (EndOfStreamException e)
 			{
 				ClosePorts();
-				System.out.print( "\n" + this.getName() + "::Sink Exiting; bytes read: " + bytesread );
+				System.out.print( "\n" + this.getName() + "::Sink Exiting; bytes read: " + bytesread + " Duration in milliseconds: " + Duration.between(start, Instant.now()).toMillis() + "\n" );
 				break;
 
 			} // catch

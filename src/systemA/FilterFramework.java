@@ -38,6 +38,14 @@ import java.io.*;
 
 public class FilterFramework extends Thread
 {
+	public enum Ids {
+		Time,
+		Velocity,
+		Altitude,
+		Pressure,
+		Temperature,
+		Attitude,
+	}
 	// Define filter input and output ports
 
 	private PipedInputStream InputReadPort = new PipedInputStream();

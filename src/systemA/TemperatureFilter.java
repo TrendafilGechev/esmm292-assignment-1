@@ -1,5 +1,10 @@
 package systemA;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.time.Duration;
+import java.time.Instant;
+
 /******************************************************************************************************************
 * File:MiddleFilter.java
 * Course: 17655
@@ -20,39 +25,41 @@ package systemA;
 *
 ******************************************************************************************************************/
 
-public class MiddleFilter extends FilterFramework
+public class TemperatureFilter extends Filter
 {
 	public void run()
     {
-
-
-		int bytesread = 0;					// Number of bytes read from the input file.
-		int byteswritten = 0;				// Number of bytes written to the stream.
-		byte databyte = 0;					// The byte of data read from the file
-
 		// Next we write a message to the terminal to let the world know we are alive...
 
-		System.out.print( "\n" + this.getName() + "::Middle Reading ");
+		Instant start = Instant.now();
+		System.out.print( "\n" + this.getName() + "::Temperature Reading " + "\n");
 
 		while (true)
 		{
-			/*************************************************************
-			*	Here we read a byte and write a byte
-			*************************************************************/
-
 			try
 			{
-				databyte = ReadFilterInputPort();
-				bytesread++;
-				WriteFilterOutputPort(databyte);
-				byteswritten++;
+				readId();
+				readMeasurement();
 
+				byte[] mData = measurementData;
+				if ( id == Ids.Temperature.ordinal())
+				{
+					double tempF = Double.longBitsToDouble(measurement);
+					double tempC = (tempF - 32) * 5 / 9;
+					measurement = Double.doubleToLongBits(tempC);
+					ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+					buffer.putLong(measurement);
+					mData = buffer.array();
+				} // if
+
+				writeId(idData);
+				writeMeasurement(mData);
 			} // try
 
-			catch (EndOfStreamException e)
+			catch (EndOfStreamException | IOException e)
 			{
 				ClosePorts();
-				System.out.print( "\n" + this.getName() + "::Middle Exiting; bytes read: " + bytesread + " bytes written: " + byteswritten );
+				System.out.print("\n" + this.getName() + "::Temperature Exiting; bytes read: " + bytesRead + " bytes written: " + bytesWritten + " Duration in milliseconds: " + Duration.between(start, Instant.now()).toMillis() + "\n");
 				break;
 
 			} // catch
