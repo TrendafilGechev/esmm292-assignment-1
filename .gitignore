@@ -102,5 +102,4 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 
 # output files
-OutputA.txt
-OutputB.txt
+*Out*.txt
