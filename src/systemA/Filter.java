@@ -2,6 +2,7 @@ package systemA;
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.PipedInputStream;
 
 public abstract class Filter extends FilterFramework {
     protected DataInputStream in;
@@ -13,12 +14,12 @@ public abstract class Filter extends FilterFramework {
     protected long measurement;                   // This is the word used to store all measurements - conversions are illustrated.
     protected int id;                           // This is the measurement id
 
-    private void readData(int dataLength) throws EndOfStreamException, IOException {
+    private void readData(int dataLength, PipedInputStream InputReadPort) throws EndOfStreamException, IOException {
         for (int i = 0; i < dataLength; i++) {
             if (in != null) {
                 dataByte = in.readByte();
             } else {
-                dataByte = ReadFilterInputPort();        // This is where we read the byte from the stream...
+                dataByte = ReadFilterInputPort(InputReadPort);        // This is where we read the byte from the stream...
             }
 
             if (dataLength == Integer.BYTES) {
@@ -60,12 +61,12 @@ public abstract class Filter extends FilterFramework {
         writeData(data);
     }
 
-    protected void readId() throws EndOfStreamException, IOException {
-        readData(Integer.BYTES);
+    protected void readId(PipedInputStream InputReadPort) throws EndOfStreamException, IOException {
+        readData(Integer.BYTES, InputReadPort);
     }
 
-    protected void readMeasurement() throws EndOfStreamException, IOException {
-        readData(Long.BYTES);
+    protected void readMeasurement(PipedInputStream InputReadPort) throws EndOfStreamException, IOException {
+        readData(Long.BYTES, InputReadPort);
     }
 }
 

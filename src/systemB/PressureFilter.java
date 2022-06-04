@@ -9,6 +9,14 @@ import java.time.Instant;
 import java.util.ArrayList;
 
 public class PressureFilter extends Filter {
+
+    public PressureFilter(double lowerLimit, double upperLimit) {
+        this.lowerLimit = lowerLimit;
+        this.upperLimit = upperLimit;
+    }
+
+    double lowerLimit;
+    double upperLimit;
     ArrayList<Frame> invalidFrames = new ArrayList<>();
     Frame currentFrame;
     long firstValidPressure = -1;
@@ -17,8 +25,8 @@ public class PressureFilter extends Filter {
     private void readFrame() throws EndOfStreamException, IOException {
         currentFrame = new Frame();
         for (int i = 0; i < 4; i++) {
-            readId();
-            readMeasurement();
+            readId(this.InputReadPort1);
+            readMeasurement(this.InputReadPort1);
             if (id == Ids.Time.ordinal()) {
                 currentFrame.setTimestampIdBytes(idData.clone());
                 currentFrame.setTimestampBytes(measurementData.clone());
@@ -42,7 +50,7 @@ public class PressureFilter extends Filter {
     private void processFrame() throws EndOfStreamException, IOException {
         readFrame();
         double pressure = Double.longBitsToDouble(currentFrame.getPressure());
-        if (pressure > 80.0d || pressure < 50.0d) {
+        if (pressure > upperLimit || pressure < lowerLimit) {
             invalidFrames.add(currentFrame);
             processFrame();
         } else if (invalidFrames.size() == 0 || firstValidPressure == -1) {

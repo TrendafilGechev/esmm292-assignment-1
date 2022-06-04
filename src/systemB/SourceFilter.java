@@ -25,70 +25,70 @@ import java.time.Duration;
 import java.time.Instant;
 
 public class SourceFilter extends Filter {
-	public void run() {
+    public void run() {
 
-		String fileName = "src/FlightData.dat";    // Input data file.
-		Instant start = Instant.now();
-		try {
-			/***********************************************************************************
-			 *	Here we open the file and write a message to the terminal.
-			 ***********************************************************************************/
+        String fileName = "src/FlightData.dat";    // Input data file.
+        Instant start = Instant.now();
+        try {
+            /***********************************************************************************
+             *	Here we open the file and write a message to the terminal.
+             ***********************************************************************************/
 
-			in = new DataInputStream(new FileInputStream(fileName));
-			System.out.println("\n" + this.getName() + "::Source reading file..." + "\n");
+            in = new DataInputStream(new FileInputStream(fileName));
+            System.out.println("\n" + this.getName() + "::Source reading file..." + "\n");
 
-			/***********************************************************************************
-			 *	Here we read the data from the file and send it out the filter's output port one
-			 * 	byte at a time. The loop stops when it encounters an EOFExecption.
-			 ***********************************************************************************/
+            /***********************************************************************************
+             *	Here we read the data from the file and send it out the filter's output port one
+             * 	byte at a time. The loop stops when it encounters an EOFExecption.
+             ***********************************************************************************/
 
-			while (true) {
-				readId();
-				readMeasurement();
+            while (true) {
+                readId(this.InputReadPort1);
+                readMeasurement(this.InputReadPort1);
 
-				if (id != Ids.Velocity.ordinal() && id != Ids.Attitude.ordinal()) {
-					writeId(idData);
-					writeMeasurement(measurementData);
-				} else {
-					id = 0;
-					measurement = 0;
-				}
-			} // while
+                if (id != Ids.Velocity.ordinal() && id != Ids.Attitude.ordinal()) {
+                    writeId(idData);
+                    writeMeasurement(measurementData);
+                } else {
+                    id = 0;
+                    measurement = 0;
+                }
+            } // while
 
-		} //try
+        } //try
 
-		/***********************************************************************************
-		 *	The following exception is raised when we hit the end of input file. Once we
-		 * 	reach this point, we close the input file, close the filter ports and exit.
-		 ***********************************************************************************/ catch (
-				EOFException eoferr) {
-			System.out.println("\n" + this.getName() + "::End of file reached...");
-			try {
-				in.close();
-				ClosePorts();
-				System.out.println("\n" + this.getName() + "::Read file complete, bytes read::" + bytesRead + " bytes written: " + bytesWritten + " Duration in milliseconds: " + Duration.between(start, Instant.now()).toMillis() + "\n");
+        /***********************************************************************************
+         *	The following exception is raised when we hit the end of input file. Once we
+         * 	reach this point, we close the input file, close the filter ports and exit.
+         ***********************************************************************************/ catch (
+                EOFException eoferr) {
+            System.out.println("\n" + this.getName() + "::End of file reached...");
+            try {
+                in.close();
+                ClosePorts();
+                System.out.println("\n" + this.getName() + "::Read file complete, bytes read::" + bytesRead + " bytes written: " + bytesWritten + " Duration in milliseconds: " + Duration.between(start, Instant.now()).toMillis() + "\n");
 
-			}
-			/***********************************************************************************
-			 *	The following exception is raised should we have a problem closing the file.
-			 ***********************************************************************************/ catch (
-					Exception closeerr) {
-				System.out.println("\n" + this.getName() + "::Problem closing input data file::" + closeerr);
+            }
+            /***********************************************************************************
+             *	The following exception is raised should we have a problem closing the file.
+             ***********************************************************************************/ catch (
+                    Exception closeerr) {
+                System.out.println("\n" + this.getName() + "::Problem closing input data file::" + closeerr);
 
-			} // catch
+            } // catch
 
-		} // catch
+        } // catch
 
-		/***********************************************************************************
-		 *	The following exception is raised should we have a problem openinging the file.
-		 ***********************************************************************************/ catch (IOException iox) {
-			System.out.println("\n" + this.getName() + "::Problem reading input data file::" + iox);
+        /***********************************************************************************
+         *	The following exception is raised should we have a problem openinging the file.
+         ***********************************************************************************/ catch (IOException iox) {
+            System.out.println("\n" + this.getName() + "::Problem reading input data file::" + iox);
 
-		} // catch
-		catch (EndOfStreamException e) {
-			throw new RuntimeException(e);
-		}
+        } // catch
+        catch (EndOfStreamException e) {
+            throw new RuntimeException(e);
+        }
 
-	} // run
+    } // run
 
 } // SourceFilter

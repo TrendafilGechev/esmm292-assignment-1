@@ -6,23 +6,19 @@ import java.time.Duration;
 import java.time.Instant;
 
 public class AltitudeFilter extends Filter {
-    public void run()
-    {
+    public void run() {
         // Next we write a message to the terminal to let the world know we are alive...
 
         Instant start = Instant.now();
-        System.out.print( "\n" + this.getName() + "::Altitude Reading " + "\n");
+        System.out.print("\n" + this.getName() + "::Altitude Reading " + "\n");
 
-        while (true)
-        {
-            try
-            {
-                readId();
-                readMeasurement();
+        while (true) {
+            try {
+                readId(this.InputReadPort1);
+                readMeasurement(this.InputReadPort1);
 
                 byte[] mData = measurementData;
-                if ( id == Ids.Altitude.ordinal())
-                {
+                if (id == Ids.Altitude.ordinal()) {
                     double feetAlt = Double.longBitsToDouble(measurement);
                     double meters = feetAlt * 0.3048;
                     measurement = Double.doubleToLongBits(meters);
@@ -35,8 +31,7 @@ public class AltitudeFilter extends Filter {
                 writeMeasurement(mData);
             } // try
 
-            catch (EndOfStreamException | IOException e)
-            {
+            catch (EndOfStreamException | IOException e) {
                 ClosePorts();
                 System.out.print("\n" + this.getName() + "::Altitude Exiting; bytes read: " + bytesRead + " bytes written: " + bytesWritten + " Duration in milliseconds: " + Duration.between(start, Instant.now()).toMillis() + "\n");
                 break;
