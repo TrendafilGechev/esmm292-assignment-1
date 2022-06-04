@@ -23,9 +23,11 @@ import java.time.Duration;
 import java.time.Instant;
 
 public class SourceFilter extends Filter {
+
+    @Override
     public void run() {
 
-        String fileName = "FlightData.dat";    // Input data file.
+        String fileName = "src/FlightData.dat";    // Input data file.
         Instant start = Instant.now();
         try {
             /***********************************************************************************
