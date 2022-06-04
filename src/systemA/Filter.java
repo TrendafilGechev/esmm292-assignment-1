@@ -9,12 +9,11 @@ public abstract class Filter extends FilterFramework {
     protected int bytesRead = 0;               // Number of bytes read from the input file.
     protected int bytesWritten = 0;               // Number of bytes written to the stream.
     protected byte dataByte = 0;               // The byte of data read from the stream
-    protected byte[] idData = new byte[Integer.BYTES];
-    protected byte[] measurementData = new byte[Long.BYTES];
-    protected long measurement;                   // This is the word used to store all measurements - conversions are illustrated.
-    protected int id;                           // This is the measurement id
+    private long measurement;                   // This is the word used to store all measurements - conversions are illustrated.
+    private int id;                           // This is the measurement id
 
-    private void readData(int dataLength, PipedInputStream InputReadPort) throws EndOfStreamException, IOException {
+    private ReadData readData(int dataLength, PipedInputStream InputReadPort) throws EndOfStreamException, IOException {
+        byte[] bytes = new byte[dataLength];
         for (int i = 0; i < dataLength; i++) {
             if (in != null) {
                 dataByte = in.readByte();
@@ -23,10 +22,10 @@ public abstract class Filter extends FilterFramework {
             }
 
             if (dataLength == Integer.BYTES) {
-                idData[i] = dataByte;
+                bytes[i] = dataByte;
                 id = id | (dataByte & 0xFF);        // We append the byte on to ID...
             } else {
-                measurementData[i] = dataByte;
+                bytes[i] = dataByte;
                 if (in == null) {
                     measurement = measurement | (dataByte & 0xFF);
                 }
@@ -42,6 +41,16 @@ public abstract class Filter extends FilterFramework {
             }
             bytesRead++;
         }
+
+        ReadData readData;
+        if (dataLength == Integer.BYTES) {
+            readData = new ReadData(bytes, this.id);
+            this.id = 0;
+        } else {
+            readData = new ReadData(bytes, this.measurement);
+            this.measurement = 0;
+        }
+        return readData;
     }
 
     protected void writeData(byte[] data) {
@@ -61,12 +70,14 @@ public abstract class Filter extends FilterFramework {
         writeData(data);
     }
 
-    protected void readId(PipedInputStream InputReadPort) throws EndOfStreamException, IOException {
-        readData(Integer.BYTES, InputReadPort);
+    protected IdData readId(PipedInputStream InputReadPort) throws EndOfStreamException, IOException {
+        ReadData readData = readData(Integer.BYTES, InputReadPort);
+        return new IdData(readData);
     }
 
-    protected void readMeasurement(PipedInputStream InputReadPort) throws EndOfStreamException, IOException {
-        readData(Long.BYTES, InputReadPort);
+    protected MeasurementData readMeasurement(PipedInputStream InputReadPort) throws EndOfStreamException, IOException {
+        ReadData readData = readData(Long.BYTES, InputReadPort);
+        return new MeasurementData(readData);
     }
 }
 

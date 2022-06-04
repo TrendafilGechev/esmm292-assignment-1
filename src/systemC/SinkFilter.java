@@ -67,7 +67,7 @@ public class SinkFilter extends Filter {
                 id = 0;
 
                 for (i = 0; i < IdLength; i++) {
-                    databyte = ReadFilterInputPort(this.InputReadPort1);    // This is where we read the byte from the stream...
+                    databyte = ReadFilterInputPort(this.InputReadPortA);    // This is where we read the byte from the stream...
 
                     id = id | (databyte & 0xFF);        // We append the byte on to ID...
 
@@ -96,7 +96,7 @@ public class SinkFilter extends Filter {
                 measurement = 0;
 
                 for (i = 0; i < MeasurementLength; i++) {
-                    databyte = ReadFilterInputPort(this.InputReadPort1);
+                    databyte = ReadFilterInputPort(this.InputReadPortA);
                     measurement = measurement | (databyte & 0xFF);    // We append the byte on to measurement...
 
                     if (i != MeasurementLength - 1)                    // If this is not the last byte, then slide the

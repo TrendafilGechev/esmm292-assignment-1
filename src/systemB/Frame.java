@@ -11,6 +11,25 @@ public class Frame {
     byte[] altId;
     byte[] altValue;
     byte[] pressureId;
+    byte[] attitudeId;
+
+    public byte[] getAttitudeIdBytes() {
+        return attitudeId;
+    }
+
+    public void setAttitudeIdBytes(byte[] attitudeId) {
+        this.attitudeId = attitudeId;
+    }
+
+    public byte[] getAttitudeBytes() {
+        return attitudeValue;
+    }
+
+    public void setAttitudeBytes(byte[] attitudeValue) {
+        this.attitudeValue = attitudeValue;
+    }
+
+    byte[] attitudeValue;
 
     public byte[] getTimestampIdBytes() {
         return timestampId;
@@ -22,6 +41,10 @@ public class Frame {
 
     public byte[] getTimestampBytes() {
         return timestampValue;
+    }
+
+    public long getTimestampInMillis() {
+        return bytesToLong(timestampValue);
     }
 
     public void setTimestampBytes(byte[] timestampValue) {
@@ -80,14 +103,18 @@ public class Frame {
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
     public long getPressure() {
-        long pressure = 0;
-        for (int i = 0; i < pressureValue.length; i++) {
-            pressure = pressure | (pressureValue[i] & 0xFF);
-            if (i != pressureValue.length - 1) {
-                pressure = pressure << 8;
+        return bytesToLong(pressureValue);
+    }
+
+    public long bytesToLong(byte[] bytes) {
+        long val = 0;
+        for (int i = 0; i < bytes.length; i++) {
+            val = val | (bytes[i] & 0xFF);
+            if (i != bytes.length - 1) {
+                val = val << 8;
             }
         }
-        return pressure;
+        return val;
     }
 
     public byte[] getOutputArray() throws IOException {
@@ -99,6 +126,10 @@ public class Frame {
         outputStream.write(pressureValue);
         outputStream.write(tempId);
         outputStream.write(tempValue);
+        if (attitudeId != null && attitudeId.length > 0) {
+            outputStream.write(attitudeId);
+            outputStream.write(attitudeValue);
+        }
         return outputStream.toByteArray();
     }
 }

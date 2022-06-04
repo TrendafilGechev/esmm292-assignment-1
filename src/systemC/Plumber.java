@@ -26,8 +26,10 @@ public class Plumber {
          * Here we instantiate three filters.
          ****************************************************************************/
 
-        SourceFilter Filter1 = new SourceFilter();
-        SinkFilter Filter3 = new SinkFilter();
+        SourceFilterA FilterA = new SourceFilterA();
+        SourceFilterB FilterB = new SourceFilterB();
+        SortFilter Filter3 = new SortFilter();
+        // SinkFilter Filter3 = new SinkFilter();
 
         /****************************************************************************
          * Here we connect the filters starting with the sink filter (Filter 1) which
@@ -35,17 +37,14 @@ public class Plumber {
          * source filter (Filter3).
          ****************************************************************************/
 
-        // Filter3.Connect(Filter2); // This esstially says, "connect Filter3 input port to Filter2 output port
-        // Filter2.Connect(Filter1); // This esstially says, "connect Filter2 intput port to Filter1 output port
+        Filter3.Connect(FilterA, FilterB);
 
         /****************************************************************************
          * Here we start the filters up. All-in-all,... its really kind of boring.
          ****************************************************************************/
 
-        // Filter1.start();
-        // Filter2.start();
-        // Filter3.start();
-
+        FilterA.start();
+        FilterB.start();
+        Filter3.start();
     } // main
-
 } // Plumber

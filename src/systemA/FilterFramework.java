@@ -15,7 +15,7 @@ package systemA; /**************************************************************
  *
  * Parameters:
  *
- * InputReadPort1:	This is the filter's input port. Essentially this port is connected to another filter's piped
+ * InputReadPortA:	This is the filter's input port. Essentially this port is connected to another filter's piped
  *					output steam. All filters connect to other filters by connecting their input ports to other
  *					filter's output ports. This is handled by the Connect() method.
  *
@@ -47,22 +47,21 @@ public class FilterFramework extends Thread {
     }
     // Define filter input and output ports
 
-    protected PipedInputStream InputReadPort1 = new PipedInputStream();
-    protected PipedInputStream InputReadPort2;
-    private PipedOutputStream OutputWritePort = new PipedOutputStream();
+    protected PipedInputStream InputReadPortA = new PipedInputStream();
+    protected PipedInputStream InputReadPortB;
+    private final PipedOutputStream OutputWritePort = new PipedOutputStream();
 
     // The following reference to a filter is used because java pipes are able to reliably
     // detect broken pipes on the input port of the filter. This variable will point to
     // the previous filter in the network and when it dies, we know that it has closed its
     // output pipe and will send no more data.
 
-    private FilterFramework InputFilter;
+    private FilterFramework InputFilterA;
+    private FilterFramework InputFilterB;
 
     /***************************************************************************
      * InnerClass:: EndOfStreamExeception
      * Purpose: This
-     *
-     *
      *
      * Arguments: none
      *
@@ -72,16 +71,13 @@ public class FilterFramework extends Thread {
      *
      ****************************************************************************/
 
-    protected class EndOfStreamException extends Exception {
-
+    protected static class EndOfStreamException extends Exception {
         EndOfStreamException() {
             super();
         }
-
         EndOfStreamException(String s) {
             super(s);
         }
-
     } // class
 
 
@@ -100,40 +96,29 @@ public class FilterFramework extends Thread {
      *
      ****************************************************************************/
 
-    public void Connect(FilterFramework Filter1, FilterFramework filter2) {
+    public void Connect(FilterFramework filterA, FilterFramework filterB) {
         try {
             // Connect this filter's input to the upstream pipe's output stream
-
-            InputReadPort1.connect(Filter1.OutputWritePort);
-            InputFilter = Filter1;
-            InputReadPort2 = new PipedInputStream();
-            InputReadPort2.connect(filter2.OutputWritePort);
-            //
-
+            InputReadPortA.connect(filterA.OutputWritePort);
+            InputFilterA = filterA;
+            InputFilterB = filterB;
+            InputReadPortB = new PipedInputStream();
+            InputReadPortB.connect(filterB.OutputWritePort);
         } // try
-
         catch (Exception Error) {
-            System.out.println("\n" + this.getName() + " systemA.FilterFramework error connecting::" + Error);
-
+            System.out.println("\n" + this.getName() + " FilterFramework error connecting::" + Error);
         } // catch
-
     } // Connect
 
     public void Connect(FilterFramework Filter) {
         try {
             // Connect this filter's input to the upstream pipe's output stream
-
-            InputReadPort1.connect(Filter.OutputWritePort);
-            InputFilter = Filter;
-            //
-
+            InputReadPortA.connect(Filter.OutputWritePort);
+            InputFilterA = Filter;
         } // try
-
         catch (Exception Error) {
-            System.out.println("\n" + this.getName() + " systemA.FilterFramework error connecting::" + Error);
-
+            System.out.println("\n" + this.getName() + " FilterFramework error connecting::" + Error);
         } // catch
-
     } // Connect
 
     /***************************************************************************
@@ -159,7 +144,7 @@ public class FilterFramework extends Thread {
          * filters are deadlocked, then this can result in infinite waits in this
          * loop. It is necessary to check to see if we are at the end of stream
          * in the wait loop because it is possible that the upstream filter completes
-         * while we are waiting. If this happens and we do not check for the end of
+         * while we are waiting. If this happens, and we do not check for the end of
          * stream, then we could wait forever on an upstream pipe that is long gone.
          * Unfortunately Java pipes do not throw exceptions when the input pipe is
          * broken.
@@ -169,23 +154,16 @@ public class FilterFramework extends Thread {
             while (InputReadPort.available() == 0) {
                 if (EndOfInputStream()) {
                     throw new EndOfStreamException("End of input stream reached");
-
                 } //if
-
                 sleep(250);
-
             } // while
-
         } // try
-
         catch (EndOfStreamException Error) {
             throw Error;
-
         } // catch
 
         catch (Exception Error) {
             System.out.println("\n" + this.getName() + " Error in read port wait loop::" + Error);
-
         } // catch
 
         /***********************************************************************
@@ -196,15 +174,11 @@ public class FilterFramework extends Thread {
         try {
             datum = (byte) InputReadPort.read();
             return datum;
-
         } // try
-
         catch (Exception Error) {
             System.out.println("\n" + this.getName() + " Pipe read error::" + Error);
             return datum;
-
         } // catch
-
     } // ReadFilterPort
 
     /***************************************************************************
@@ -223,18 +197,12 @@ public class FilterFramework extends Thread {
 
     public void WriteFilterOutputPort(byte datum) {
         try {
-            OutputWritePort.write((int) datum);
+            OutputWritePort.write(datum);
             OutputWritePort.flush();
-
         } // try
-
         catch (Exception Error) {
             System.out.println("\n" + this.getName() + " Pipe write error::" + Error);
-
         } // catch
-
-        return;
-
     } // WriteFilterPort
 
     /***************************************************************************
@@ -255,13 +223,10 @@ public class FilterFramework extends Thread {
      ****************************************************************************/
 
     private boolean EndOfInputStream() {
-        if (InputFilter.isAlive()) {
-            return false;
-
+        if (InputReadPortB != null) {
+            return !InputFilterA.isAlive() && !InputFilterB.isAlive();
         } else {
-
-            return true;
-
+            return !InputFilterA.isAlive();
         } // if
 
     } // EndOfInputStream
@@ -282,14 +247,14 @@ public class FilterFramework extends Thread {
 
     public void ClosePorts() {
         try {
-            InputReadPort1.close();
+            InputReadPortA.close();
+            if (InputReadPortB != null) {
+                InputReadPortB.close();
+            }
             OutputWritePort.close();
-
         } catch (Exception Error) {
             System.out.println("\n" + this.getName() + " ClosePorts error::" + Error);
-
         } // catch
-
     } // ClosePorts
 
     /***************************************************************************
@@ -310,7 +275,5 @@ public class FilterFramework extends Thread {
     public void run() {
         // The run method should be overridden by the subordinate class. Please
         // see the example applications provided for more details.
-
     } // run
-
-} // systemA.FilterFramework class
+} // FilterFramework class

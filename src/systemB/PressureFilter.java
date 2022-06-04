@@ -1,6 +1,8 @@
 package systemB;
 
 import systemA.Filter;
+import systemA.IdData;
+import systemA.MeasurementData;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -25,25 +27,21 @@ public class PressureFilter extends Filter {
     private void readFrame() throws EndOfStreamException, IOException {
         currentFrame = new Frame();
         for (int i = 0; i < 4; i++) {
-            readId(this.InputReadPort1);
-            readMeasurement(this.InputReadPort1);
-            if (id == Ids.Time.ordinal()) {
-                currentFrame.setTimestampIdBytes(idData.clone());
-                currentFrame.setTimestampBytes(measurementData.clone());
-            } else if (id == Ids.Altitude.ordinal()) {
-                currentFrame.setAltIdBytes(idData.clone());
-                currentFrame.setAltBytes(measurementData.clone());
-            } else if (id == Ids.Temperature.ordinal()) {
-                currentFrame.setTempIdBytes(idData.clone());
-                currentFrame.setTempBytes(measurementData.clone());
-            } else if (id == Ids.Pressure.ordinal()) {
-                currentFrame.setPressureIdBytes(idData.clone());
-                currentFrame.setPressureBytes(measurementData.clone());
+            IdData idData = readId(this.InputReadPortA);
+            MeasurementData measurementData = readMeasurement(this.InputReadPortA);
+            if (idData.id == Ids.Time.ordinal()) {
+                currentFrame.setTimestampIdBytes(idData.bytes.clone());
+                currentFrame.setTimestampBytes(measurementData.bytes.clone());
+            } else if (idData.id == Ids.Altitude.ordinal()) {
+                currentFrame.setAltIdBytes(idData.bytes.clone());
+                currentFrame.setAltBytes(measurementData.bytes.clone());
+            } else if (idData.id == Ids.Temperature.ordinal()) {
+                currentFrame.setTempIdBytes(idData.bytes.clone());
+                currentFrame.setTempBytes(measurementData.bytes.clone());
+            } else if (idData.id == Ids.Pressure.ordinal()) {
+                currentFrame.setPressureIdBytes(idData.bytes.clone());
+                currentFrame.setPressureBytes(measurementData.bytes.clone());
             }
-
-            // reset id and measurement for next reading
-            id = 0;
-            measurement = 0;
         }
     }
 

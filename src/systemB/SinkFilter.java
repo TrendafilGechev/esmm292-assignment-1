@@ -26,6 +26,8 @@
 package systemB;
 
 import systemA.Filter;
+import systemA.IdData;
+import systemA.MeasurementData;
 
 import java.io.IOException;
 import java.math.RoundingMode;
@@ -63,10 +65,8 @@ public class SinkFilter extends Filter {
 
         while (true) {
             try {
-                id = 0;
-                measurement = 0;
-                readId(this.InputReadPort1);
-                readMeasurement(this.InputReadPort1);
+                IdData idData = readId(this.InputReadPortA);
+                MeasurementData measurementData = readMeasurement(this.InputReadPortA);
 
                 /****************************************************************************
                  // Here we look for an ID of 0 which indicates this is a time measurement.
@@ -79,8 +79,8 @@ public class SinkFilter extends Filter {
                  // illustrated below.
                  ****************************************************************************/
 
-                if (id == Ids.Time.ordinal()) {
-                    TimeStamp.setTimeInMillis(measurement);
+                if (idData.id == Ids.Time.ordinal()) {
+                    TimeStamp.setTimeInMillis(measurementData.measurement);
                     outputLine.append(TimeStampFormat.format(TimeStamp.getTime()));
                 } // if
 
@@ -94,19 +94,19 @@ public class SinkFilter extends Filter {
                  // in.
                  ****************************************************************************/
 
-                else if (id == Ids.Temperature.ordinal()) {
-                    double temp = Double.longBitsToDouble(measurement);
-                    outputLine.append(" ID = ").append(id).append(" C: ").append(df.format(temp));
+                else if (idData.id == Ids.Temperature.ordinal()) {
+                    double temp = Double.longBitsToDouble(measurementData.measurement);
+                    outputLine.append(" ID = ").append(idData.id).append(" C: ").append(df.format(temp));
                     readTemperature = true;
                 } // if
 
-                else if (id == Ids.Altitude.ordinal()) {
-                    double altitude = Double.longBitsToDouble(measurement);
-                    outputLine.append(" ID = ").append(id).append(" meters: ").append(df.format(altitude));
+                else if (idData.id == Ids.Altitude.ordinal()) {
+                    double altitude = Double.longBitsToDouble(measurementData.measurement);
+                    outputLine.append(" ID = ").append(idData.id).append(" meters: ").append(df.format(altitude));
                     readAltitude = true;
-                } else if (id == Ids.Pressure.ordinal()) {
-                    double pressure = Double.longBitsToDouble(measurement);
-                    outputLine.append(" ID = ").append(id).append(" psi: ").append(df.format(pressure));
+                } else if (idData.id == Ids.Pressure.ordinal()) {
+                    double pressure = Double.longBitsToDouble(measurementData.measurement);
+                    outputLine.append(" ID = ").append(idData.id).append(" psi: ").append(df.format(pressure));
                     readPressure = true;
                 }
 

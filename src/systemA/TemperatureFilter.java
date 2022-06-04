@@ -28,38 +28,30 @@ import java.time.Instant;
 public class TemperatureFilter extends Filter {
     public void run() {
         // Next we write a message to the terminal to let the world know we are alive...
-
         Instant start = Instant.now();
         System.out.print("\n" + this.getName() + "::Temperature Reading " + "\n");
 
         while (true) {
             try {
-                readId(this.InputReadPort1);
-                readMeasurement(this.InputReadPort1);
-
-                byte[] mData = measurementData;
-                if (id == Ids.Temperature.ordinal()) {
-                    double tempF = Double.longBitsToDouble(measurement);
+                IdData idData = readId(this.InputReadPortA);
+                MeasurementData measurementData = readMeasurement(this.InputReadPortA);
+                if (idData.id == Ids.Temperature.ordinal()) {
+                    double tempF = Double.longBitsToDouble(measurementData.measurement);
                     double tempC = (tempF - 32) * 5 / 9;
-                    measurement = Double.doubleToLongBits(tempC);
+                    measurementData.measurement = Double.doubleToLongBits(tempC);
                     ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-                    buffer.putLong(measurement);
-                    mData = buffer.array();
+                    buffer.putLong(measurementData.measurement);
+                    measurementData.bytes = buffer.array();
                 } // if
 
-                writeId(idData);
-                writeMeasurement(mData);
+                writeId(idData.bytes);
+                writeMeasurement(measurementData.bytes);
             } // try
-
             catch (EndOfStreamException | IOException e) {
                 ClosePorts();
                 System.out.print("\n" + this.getName() + "::Temperature Exiting; bytes read: " + bytesRead + " bytes written: " + bytesWritten + " Duration in milliseconds: " + Duration.between(start, Instant.now()).toMillis() + "\n");
                 break;
-
             } // catch
-
         } // while
-
     } // run
-
-} // MiddleFilter
+} // TemperatureFilter
