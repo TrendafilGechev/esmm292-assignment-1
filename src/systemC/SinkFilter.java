@@ -26,7 +26,14 @@
 package systemC;
 
 import systemA.Filter;
+import systemA.IdData;
+import systemA.MeasurementData;
 
+import java.io.IOException;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;                        // This class is used to interpret time words
 import java.text.SimpleDateFormat;        // This class is used to format and write time in a string format.
 
@@ -37,77 +44,30 @@ public class SinkFilter extends Filter {
          * 	TimeStampFormat is used to format the time value so that it can be easily printed
          *	to the terminal.
          *************************************************************************************/
-
+        Instant start = Instant.now();
         Calendar TimeStamp = Calendar.getInstance();
-        SimpleDateFormat TimeStampFormat = new SimpleDateFormat("yyyy MM dd::hh:mm:ss:SSS");
+        SimpleDateFormat TimeStampFormat = new SimpleDateFormat("yyyy:dd:HH:mm:ss");
 
-        int MeasurementLength = 8;        // This is the length of all measurements (including time) in bytes
-        int IdLength = 4;                // This is the length of IDs in the byte stream
+        DecimalFormat df = new DecimalFormat("0.00000");
+        df.setRoundingMode(RoundingMode.HALF_UP);
 
-        byte databyte = 0;                // This is the data byte read from the stream
-        int bytesread = 0;                // This is the number of bytes read from the stream
+        StringBuilder outputLine = new StringBuilder();
 
-        long measurement;                // This is the word used to store all measurements - conversions are illustrated.
-        int id;                            // This is the measurement id
-        int i;                            // This is a loop counter
+        boolean readTemperature = false;
+        boolean readAltitude = false;
+        boolean readPressure = false;
+        boolean readAttitude = false;
 
         /*************************************************************
          *	First we announce to the world that we are alive...
          **************************************************************/
 
-        System.out.print("\n" + this.getName() + "::Sink Reading ");
+        System.out.print("\n" + this.getName() + "::Sink Reading " + "\n");
 
         while (true) {
             try {
-                /***************************************************************************
-                 // We know that the first data coming to this filter is going to be an ID and
-                 // that it is IdLength long. So we first decommutate the ID bytes.
-                 ****************************************************************************/
-
-                id = 0;
-
-                for (i = 0; i < IdLength; i++) {
-                    databyte = ReadFilterInputPort(this.InputReadPortA);    // This is where we read the byte from the stream...
-
-                    id = id | (databyte & 0xFF);        // We append the byte on to ID...
-
-                    if (i != IdLength - 1)                // If this is not the last byte, then slide the
-                    {                                    // previously appended byte to the left by one byte
-                        id = id << 8;                    // to make room for the next byte we append to the ID
-
-                    } // if
-
-                    bytesread++;                        // Increment the byte count
-
-                } // for
-
-                /****************************************************************************
-                 // Here we read measurements. All measurement data is read as a stream of bytes
-                 // and stored as a long value. This permits us to do bitwise manipulation that
-                 // is neccesary to convert the byte stream into data words. Note that bitwise
-                 // manipulation is not permitted on any kind of floating point types in Java.
-                 // If the id = 0 then this is a time value and is therefore a long value - no
-                 // problem. However, if the id is something other than 0, then the bits in the
-                 // long value is really of type double and we need to convert the value using
-                 // Double.longBitsToDouble(long val) to do the conversion which is illustrated.
-                 // below.
-                 *****************************************************************************/
-
-                measurement = 0;
-
-                for (i = 0; i < MeasurementLength; i++) {
-                    databyte = ReadFilterInputPort(this.InputReadPortA);
-                    measurement = measurement | (databyte & 0xFF);    // We append the byte on to measurement...
-
-                    if (i != MeasurementLength - 1)                    // If this is not the last byte, then slide the
-                    {                                                // previously appended byte to the left by one byte
-                        measurement = measurement << 8;                // to make room for the next byte we append to the
-                        // measurement
-                    } // if
-
-                    bytesread++;                                    // Increment the byte count
-
-                } // if
+                IdData idData = readId(this.InputReadPortA);
+                MeasurementData measurementData = readMeasurement(this.InputReadPortA);
 
                 /****************************************************************************
                  // Here we look for an ID of 0 which indicates this is a time measurement.
@@ -120,9 +80,9 @@ public class SinkFilter extends Filter {
                  // illustrated below.
                  ****************************************************************************/
 
-                if (id == 0) {
-                    TimeStamp.setTimeInMillis(measurement);
-
+                if (idData.id == Ids.Time.ordinal()) {
+                    TimeStamp.setTimeInMillis(measurementData.measurement);
+                    outputLine.append(TimeStampFormat.format(TimeStamp.getTime()));
                 } // if
 
                 /****************************************************************************
@@ -135,29 +95,46 @@ public class SinkFilter extends Filter {
                  // in.
                  ****************************************************************************/
 
-                if (id == 4) {
-                    System.out.print(TimeStampFormat.format(TimeStamp.getTime()) + " ID = " + id + " " + Double.longBitsToDouble(measurement));
-
+                else if (idData.id == Ids.Temperature.ordinal()) {
+                    double temp = Double.longBitsToDouble(measurementData.measurement);
+                    outputLine.append(" ID = ").append(idData.id).append(" F: ").append(df.format(temp));
+                    readTemperature = true;
                 } // if
 
-                System.out.print("\n");
+                else if (idData.id == Ids.Altitude.ordinal()) {
+                    double altitude = Double.longBitsToDouble(measurementData.measurement);
+                    outputLine.append(" ID = ").append(idData.id).append(" feet: ").append(df.format(altitude));
+                    readAltitude = true;
+                } else if (idData.id == Ids.Pressure.ordinal()) {
+                    double pressure = Double.longBitsToDouble(measurementData.measurement);
+                    outputLine.append(" ID = ").append(idData.id).append(" psi: ").append(df.format(pressure));
+                    readPressure = true;
+                } else if (idData.id == Ids.Attitude.ordinal()) {
+                    double attitude = Double.longBitsToDouble(measurementData.measurement);
+                    outputLine.append(" ID = ").append(idData.id).append(" attitude: ").append(df.format(attitude));
+                    readAttitude = true;
+                }
 
+                if (readTemperature && readAltitude && readPressure && readAttitude) {
+                    System.out.println(outputLine);
+                    readTemperature = false;
+                    readAltitude = false;
+                    readPressure = false;
+                    readAttitude = false;
+                    outputLine = new StringBuilder();
+                }
             } // try
 
             /*******************************************************************************
-             *	The EndOfStreamExeception below is thrown when you reach end of the input
+             *	The EndOfStreamException below is thrown when you reach end of the input
              *	stream (duh). At this point, the filter ports are closed and a message is
              *	written letting the user know what is going on.
              ********************************************************************************/ catch (
-                    EndOfStreamException e) {
+                    EndOfStreamException | IOException e) {
                 ClosePorts();
-                System.out.print("\n" + this.getName() + "::Sink Exiting; bytes read: " + bytesread);
+                System.out.print("\n" + this.getName() + "::Sink Exiting; bytes read: " + bytesRead + " Duration in milliseconds: " + Duration.between(start, Instant.now()).toMillis() + "\n");
                 break;
-
             } // catch
-
         } // while
-
     } // run
-
 } // SingFilter

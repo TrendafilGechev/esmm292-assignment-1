@@ -21,6 +21,7 @@
 package systemB;
 
 import systemA.AltitudeFilter;
+import systemA.FilterFramework;
 import systemA.TemperatureFilter;
 
 public class Plumber {
@@ -29,10 +30,16 @@ public class Plumber {
          * Here we instantiate three filters.
          ****************************************************************************/
 
+        int[] idsToRead = {
+                FilterFramework.Ids.Time.ordinal(),
+                FilterFramework.Ids.Temperature.ordinal(),
+                FilterFramework.Ids.Altitude.ordinal(),
+                FilterFramework.Ids.Pressure.ordinal()
+        };
         SourceFilter Filter1 = new SourceFilter();
         TemperatureFilter Filter2 = new TemperatureFilter();
         AltitudeFilter Filter3 = new AltitudeFilter();
-        PressureFilter Filter4 = new PressureFilter(50.0d, 80.0d);
+        PressureFilter Filter4 = new PressureFilter(50.0d, 80.0d, idsToRead);
         SinkFilter Filter5 = new SinkFilter();
 
         /****************************************************************************

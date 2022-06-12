@@ -1,8 +1,6 @@
 package systemB;
 
 import systemA.Filter;
-import systemA.IdData;
-import systemA.MeasurementData;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -12,7 +10,8 @@ import java.util.ArrayList;
 
 public class PressureFilter extends Filter {
 
-    public PressureFilter(double lowerLimit, double upperLimit) {
+    public PressureFilter(double lowerLimit, double upperLimit, int[] idsToRead) {
+        super(idsToRead);
         this.lowerLimit = lowerLimit;
         this.upperLimit = upperLimit;
     }
@@ -24,29 +23,9 @@ public class PressureFilter extends Filter {
     long firstValidPressure = -1;
     long secondValidPressure = -1;
 
-    private void readFrame() throws EndOfStreamException, IOException {
-        currentFrame = new Frame();
-        for (int i = 0; i < 4; i++) {
-            IdData idData = readId(this.InputReadPortA);
-            MeasurementData measurementData = readMeasurement(this.InputReadPortA);
-            if (idData.id == Ids.Time.ordinal()) {
-                currentFrame.setTimestampIdBytes(idData.bytes.clone());
-                currentFrame.setTimestampBytes(measurementData.bytes.clone());
-            } else if (idData.id == Ids.Altitude.ordinal()) {
-                currentFrame.setAltIdBytes(idData.bytes.clone());
-                currentFrame.setAltBytes(measurementData.bytes.clone());
-            } else if (idData.id == Ids.Temperature.ordinal()) {
-                currentFrame.setTempIdBytes(idData.bytes.clone());
-                currentFrame.setTempBytes(measurementData.bytes.clone());
-            } else if (idData.id == Ids.Pressure.ordinal()) {
-                currentFrame.setPressureIdBytes(idData.bytes.clone());
-                currentFrame.setPressureBytes(measurementData.bytes.clone());
-            }
-        }
-    }
 
     private void processFrame() throws EndOfStreamException, IOException {
-        readFrame();
+        this.currentFrame = readFrame();
         double pressure = Double.longBitsToDouble(currentFrame.getPressure());
         if (pressure > upperLimit || pressure < lowerLimit) {
             invalidFrames.add(currentFrame);
@@ -55,13 +34,6 @@ public class PressureFilter extends Filter {
             firstValidPressure = currentFrame.getPressure();
         } else {
             secondValidPressure = currentFrame.getPressure();
-        }
-    }
-
-    private void writeFrame(Frame frame) throws IOException {
-        byte[] outPutData = frame.getOutputArray();
-        for (byte dataByte : outPutData) {
-            WriteFilterOutputPort(dataByte);
         }
     }
 
@@ -83,7 +55,9 @@ public class PressureFilter extends Filter {
 
     private void resetInvalidFrameState() {
         invalidFrames.clear();
-        firstValidPressure = -1;
+        if (secondValidPressure != -1) {
+            firstValidPressure = secondValidPressure;
+        }
         secondValidPressure = -1;
     }
 
