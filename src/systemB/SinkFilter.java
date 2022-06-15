@@ -29,6 +29,7 @@ import systemA.Filter;
 import systemA.IdData;
 import systemA.MeasurementData;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
@@ -51,7 +52,8 @@ public class SinkFilter extends Filter {
         DecimalFormat df = new DecimalFormat("0.00000");
         df.setRoundingMode(RoundingMode.HALF_UP);
 
-        StringBuilder outputLine = new StringBuilder();
+		StringBuilder outputLine = new StringBuilder();
+		StringBuilder outputLinePressure = new StringBuilder();
 
         boolean readTemperature = false;
         boolean readAltitude = false;
@@ -61,7 +63,12 @@ public class SinkFilter extends Filter {
          *	First we announce to the world that we are alive...
          **************************************************************/
 
-        System.out.print("\n" + this.getName() + "::Sink Reading " + "\n");
+		System.out.print("\n" + this.getName() + "::Sink Reading " + "\n");
+		outputLine.append("Time: ").append("\t\t\t\t\t\t\t\t").append("Meters: ").append("\t\t\t\t\t").append("Pressure (psi): ").append("\t\t\t").append("Temperature (C): ").append("\t\t\t\t\t");
+		outputLine.append("\n");
+
+		outputLinePressure.append("Time: ").append("\t\t\t\t\t\t\t\t").append("Pressure (psi): ").append("\t\t\t");
+		outputLinePressure.append("\n");
 
         while (true) {
             try {
@@ -79,10 +86,16 @@ public class SinkFilter extends Filter {
                  // illustrated below.
                  ****************************************************************************/
 
-                if (idData.id == Ids.Time.ordinal()) {
-                    TimeStamp.setTimeInMillis(measurementData.measurement);
-                    outputLine.append(TimeStampFormat.format(TimeStamp.getTime()));
-                } // if
+				String formattedTime;
+				String formattedTemp;
+				String formattedAltitude;
+				String formattedPressure;
+				if (idData.id == Ids.Time.ordinal()) {
+					TimeStamp.setTimeInMillis(measurementData.measurement);
+					formattedTime = TimeStampFormat.format(TimeStamp.getTime());
+					outputLine.append(formattedTime).append("\t\t\t\t\t");
+					outputLinePressure.append(formattedTime).append("\t\t\t\t\t");
+				}
 
                 /****************************************************************************
                  // Here we pick up a measurement (ID = 4 in this case), but you can pick up
@@ -94,41 +107,80 @@ public class SinkFilter extends Filter {
                  // in.
                  ****************************************************************************/
 
-                else if (idData.id == Ids.Temperature.ordinal()) {
-                    double temp = Double.longBitsToDouble(measurementData.measurement);
-                    outputLine.append(" ID = ").append(idData.id).append(" C: ").append(df.format(temp));
-                    readTemperature = true;
-                } // if
+				else if (idData.id == Ids.Temperature.ordinal()) {
+					double temp = Double.longBitsToDouble(measurementData.measurement);
+					formattedTemp = df.format(temp);
+					outputLine.append(formattedTemp).append("\t\t\t\t\t");
+					readTemperature = true;
+				}
 
-                else if (idData.id == Ids.Altitude.ordinal()) {
-                    double altitude = Double.longBitsToDouble(measurementData.measurement);
-                    outputLine.append(" ID = ").append(idData.id).append(" meters: ").append(df.format(altitude));
-                    readAltitude = true;
-                } else if (idData.id == Ids.Pressure.ordinal()) {
-                    double pressure = Double.longBitsToDouble(measurementData.measurement);
-                    outputLine.append(" ID = ").append(idData.id).append(" psi: ").append(df.format(pressure));
-                    readPressure = true;
-                }
+				else if (idData.id == Ids.Altitude.ordinal()) {
+					double altitude = Double.longBitsToDouble(measurementData.measurement);
+					formattedAltitude = df.format(altitude);
+					outputLine.append(formattedAltitude).append("\t\t\t\t\t");
+					readAltitude = true;
+				}
 
-                if (readTemperature && readAltitude && readPressure) {
-                    System.out.println(outputLine);
-                    readTemperature = false;
-                    readAltitude = false;
-                    readPressure = false;
-                    outputLine = new StringBuilder();
-                }
-            } // try
+				else if (idData.id == Ids.Pressure.ordinal()) {
+					double pressure = Double.longBitsToDouble(measurementData.measurement);
+					formattedPressure = df.format(pressure);
+					formatPressureWildPoints(outputLine, outputLinePressure, formattedPressure);
+					readPressure = true;
+				}
 
-            /*******************************************************************************
-             *	The EndOfStreamException below is thrown when you reach end of the input
-             *	stream (duh). At this point, the filter ports are closed and a message is
-             *	written letting the user know what is going on.
-             ********************************************************************************/ catch (
-                    EndOfStreamException | IOException e) {
-                ClosePorts();
-                System.out.print("\n" + this.getName() + "::Sink Exiting; bytes read: " + bytesRead + " Duration in milliseconds: " + Duration.between(start, Instant.now()).toMillis() + "\n");
-                break;
-            } // catch
-        } // while
-    } // run
+				if (readTemperature && readAltitude && readPressure) {
+					System.out.println(outputLine);
+					readTemperature = false;
+					readAltitude = false;
+					readPressure = false;
+					outputLine.append("\n");
+					outputLinePressure.append("\n");
+					writeOutputToFile(outputLine, "OutputB.txt");
+					writeOutputToFile(outputLinePressure, "OutputPressure.txt");
+
+				}
+			} // try
+			/*******************************************************************************
+			 *	The EndOfStreamException below is thrown when you reach end of the input
+			 *	stream (duh). At this point, the filter ports are closed and a message is
+			 *	written letting the user know what is going on.
+			 ********************************************************************************/
+			catch (EndOfStreamException | IOException e) {
+				ClosePorts();
+				System.out.print("\n" + this.getName() + "::Sink Exiting; bytes read: " + bytesRead + " Duration in milliseconds: " + Duration.between(start, Instant.now()).toMillis() + "\n");
+				break;
+			} // catch
+		} // while
+	}// run
+
+	private void formatPressureWildPoints(StringBuilder outputLine, StringBuilder outputlinePressure, String formattedPressure) {
+		double formattedPressureDouble = Double.parseDouble(formattedPressure);
+		if (formattedPressureDouble < 0) {
+			formattedPressureDouble = Math.abs(formattedPressureDouble);
+			outputlinePressure.append(formattedPressureDouble);
+			outputLine.append(Math.abs(formattedPressureDouble)).append("*").append("\t\t\t\t\t");
+		} else {
+			outputLine.append(formattedPressure).append("\t\t\t\t\t");
+			outputlinePressure.delete(outputlinePressure.length()-22, outputlinePressure.length());
+		}
+	}
+
+	private void writeOutputToFile(StringBuilder outputLine, String fileName) {
+		FileWriter writer = null;
+		try {
+			writer = new FileWriter(fileName);
+			System.out.print("\n" + this.getName() + "::Sink Writing to file" + "\n" + outputLine.toString());
+			writer.write(outputLine.toString());
+		} catch (IOException e) {
+			System.err.println("IO Error in SinkFilter: " + e.getMessage());
+		}
+		try {
+			if (writer != null) {
+				System.out.print("\n" + this.getName() + "::Sink Closing writer" + "\n");
+				writer.close();
+			}
+		} catch (IOException e) {
+			System.err.println("IO Error in SinkFilter: " + e.getMessage());
+		}
+	}
 } // SingFilter

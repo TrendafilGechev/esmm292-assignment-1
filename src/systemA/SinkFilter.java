@@ -60,7 +60,7 @@ public class SinkFilter extends Filter {
          **************************************************************/
 
         System.out.print("\n" + this.getName() + "::Sink Reading " + "\n");
-        outputLine.append("Time: ").append("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + "\t" + "\t").append("Meters: ").append("\t" + "\t" + "\t" + "\t" + "\t").append("Temperature (C): ").append("\t" + "\t" + "\t" + "\t" + "\t");
+        outputLine.append("Time: ").append("\t\t\t\t\t\t\t\t").append("Meters: ").append("\t\t\t\t\t").append("Temperature (C): ").append("\t\t\t\t\t");
         outputLine.append("\n");
         while (true) {
             try {
@@ -83,7 +83,7 @@ public class SinkFilter extends Filter {
                 if (idData.id == Ids.Time.ordinal()) {
                     TimeStamp.setTimeInMillis(measurementData.measurement);
                     formattedTime = TimeStampFormat.format(TimeStamp.getTime());
-                    outputLine.append(formattedTime).append("\t" + "\t" + "\t" + "\t" + "\t");
+                    outputLine.append(formattedTime).append("\t\t\t\t\t");
                 } // if
 
                 /****************************************************************************
@@ -125,8 +125,8 @@ public class SinkFilter extends Filter {
              *	The EndOfStreamException below is thrown when you reach end of the input
              *	stream (duh). At this point, the filter ports are closed and a message is
              *	written letting the user know what is going on.
-             ********************************************************************************/ catch (
-                    EndOfStreamException | IOException e) {
+             ********************************************************************************/
+            catch (EndOfStreamException | IOException e) {
                 ClosePorts();
                 System.out.print("\n" + this.getName() + "::Sink Exiting; bytes read: " + bytesRead + " Duration in milliseconds: " + Duration.between(start, Instant.now()).toMillis() + "\n");
                 break;
