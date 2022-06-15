@@ -58,7 +58,7 @@ public class SinkFilter extends Filter {
          **************************************************************/
 
         System.out.print("\n" + this.getName() + "::Sink Reading " + "\n");
-        outputLine.append("Time: ").append("\t"+"\t"+"\t"+"\t"+"\t"+"\t"+"\t"+"\t").append("Meters: ").append("\t"+"\t"+"\t"+"\t"+"\t").append("Temperature (C): ").append("\t"+"\t"+"\t"+"\t"+"\t");
+        outputLine.append("Time: ").append("\t\t\t\t\t\t\t\t").append("Meters: ").append("\t\t\t\t\t").append("Temperature (C): ").append("\t\t\t\t\t");
         outputLine.append("\n");
         while (true) {
             try {
@@ -83,7 +83,7 @@ public class SinkFilter extends Filter {
                 if (id == Ids.Time.ordinal()) {
                     TimeStamp.setTimeInMillis(measurement);
                     formattedTime = TimeStampFormat.format(TimeStamp.getTime());
-                    outputLine.append(formattedTime).append("\t"+"\t"+"\t"+"\t"+"\t");
+                    outputLine.append(formattedTime).append("\t\t\t\t\t");
                 } // if
 
                 /****************************************************************************
@@ -99,14 +99,14 @@ public class SinkFilter extends Filter {
                 else if (id == Ids.Temperature.ordinal()) {
                     double temp = Double.longBitsToDouble(measurement);
                      formattedTemp = df.format(temp);
-                    outputLine.append(formattedTemp).append("\t"+"\t"+"\t"+"\t"+"\t");
+                    outputLine.append(formattedTemp).append("\t\t\t\t\t");
                      readTemperature = true;
-                } // if
+                }
 
                 else if (id == Ids.Altitude.ordinal()) {
                         double altitude = Double.longBitsToDouble(measurement);
                         formattedAltitude = df.format(altitude);
-                        outputLine.append(formattedAltitude).append("\t"+"\t"+"\t"+"\t"+"\t");
+                        outputLine.append(formattedAltitude).append("\t\t\t\t\t");
                         readAltitude = true;
                     }
 

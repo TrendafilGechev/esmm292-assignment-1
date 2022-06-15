@@ -19,6 +19,10 @@
 *
 ******************************************************************************************************************/
 package systemB;
+
+import systemA.AltitudeFilter;
+import systemA.TemperatureFilter;
+
 public class Plumber
 {
    public static void main(String[] argv)
@@ -28,8 +32,10 @@ public class Plumber
 		****************************************************************************/
 
 		SourceFilter Filter1 = new SourceFilter();
-		MiddleFilter Filter2 = new MiddleFilter();
-		SinkFilter Filter3 = new SinkFilter();
+	    TemperatureFilter Filter2 = new TemperatureFilter();
+	    AltitudeFilter Filter3 = new AltitudeFilter();
+		PressureFilter Filter4 = new PressureFilter();
+		SinkFilter Filter5 = new SinkFilter();
 
 		/****************************************************************************
 		* Here we connect the filters starting with the sink filter (Filter 1) which
@@ -37,6 +43,8 @@ public class Plumber
 		* source filter (Filter3).
 		****************************************************************************/
 
+		Filter5.Connect(Filter4);
+		Filter4.Connect(Filter3);
 		Filter3.Connect(Filter2); // This esstially says, "connect Filter3 input port to Filter2 output port
 		Filter2.Connect(Filter1); // This esstially says, "connect Filter2 intput port to Filter1 output port
 
@@ -47,6 +55,8 @@ public class Plumber
 		Filter1.start();
 		Filter2.start();
 		Filter3.start();
+		Filter4.start();
+		Filter5.start();
 
    } // main
 
