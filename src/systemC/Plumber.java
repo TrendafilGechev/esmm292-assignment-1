@@ -40,6 +40,7 @@ public class Plumber {
         SourceFilterB FilterB = new SourceFilterB();
         SortFilter Filter3 = new SortFilter(idsToRead);
         PressureFilter Filter4 = new PressureFilter(45.0d, 90.0d, idsToRead);
+        AttitudePressureFilter Filter5 = new AttitudePressureFilter(10.0d, 65.0d, idsToRead);
         SinkFilter Filter6 = new SinkFilter();
 
         /****************************************************************************
@@ -50,7 +51,8 @@ public class Plumber {
 
         Filter3.Connect(FilterA, FilterB);
         Filter4.Connect(Filter3);
-        Filter6.Connect(Filter4);
+        Filter5.Connect(Filter4);
+        Filter6.Connect(Filter5);
 
         /****************************************************************************
          * Here we start the filters up. All-in-all,... its really kind of boring.
@@ -60,6 +62,7 @@ public class Plumber {
         FilterB.start();
         Filter3.start();
         Filter4.start();
+        Filter5.start();
         Filter6.start();
     } // main
 } // Plumber

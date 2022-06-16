@@ -106,6 +106,10 @@ public class Frame {
         return bytesToLong(pressureValue);
     }
 
+    public long getAttitude() {
+        return bytesToLong(attitudeValue);
+    }
+
     public long bytesToLong(byte[] bytes) {
         long val = 0;
         for (int i = 0; i < bytes.length; i++) {
