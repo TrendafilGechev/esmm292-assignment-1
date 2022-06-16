@@ -132,7 +132,6 @@ public class SinkFilter extends Filter {
 				}
 
 				if (readTemperature && readAltitude && readPressure) {
-					System.out.println(outputLine);
 					readTemperature = false;
 					readAltitude = false;
 					readPressure = false;
@@ -174,14 +173,12 @@ public class SinkFilter extends Filter {
 		FileWriter writer = null;
 		try {
 			writer = new FileWriter(fileName, append);
-			System.out.print("\n" + this.getName() + "::Sink Writing to file" + "\n" + outputLine.toString());
 			writer.write(outputLine.toString());
 		} catch (IOException e) {
 			System.err.println("IO Error in SinkFilter: " + e.getMessage());
 		}
 		try {
 			if (writer != null) {
-				System.out.print("\n" + this.getName() + "::Sink Closing writer" + "\n");
 				writer.close();
 			}
 		} catch (IOException e) {

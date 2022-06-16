@@ -60,7 +60,7 @@ public class SinkFilter extends Filter {
          **************************************************************/
 
         System.out.print("\n" + this.getName() + "::Sink Reading " + "\n");
-        outputLine.append("Time: ").append("\t\t\t\t\t\t\t\t").append("Meters: ").append("\t\t\t\t\t").append("Temperature (C): ").append("\t\t\t\t\t");
+        outputLine.append("Time: ").append("\t\t\t\t\t\t\t\t").append("Altitude (m): ").append("\t\t\t\t").append("Temperature (C): ").append("\t\t\t\t\t");
         outputLine.append("\n");
         while (true) {
             try {
@@ -111,7 +111,6 @@ public class SinkFilter extends Filter {
                 }
 
                 if (readTemperature && readAltitude) {
-                    System.out.println(outputLine);
                     readTemperature = false;
                     readAltitude = false;
                     outputLine.append("\n");
@@ -138,14 +137,12 @@ public class SinkFilter extends Filter {
         FileWriter writer = null;
         try {
             writer = new FileWriter("OutputA.txt", append);
-            System.out.print("\n" + this.getName() + "::Sink Writing to file" + "\n" + outputLine.toString());
             writer.append(outputLine);
         } catch (IOException e) {
             System.err.println("IO Error in SinkFilter: " + e.getMessage());
         }
         try {
             if (writer != null) {
-                System.out.print("\n" + this.getName() + "::Sink Closing writer" + "\n");
                 writer.close();
             }
         } catch (IOException e) {
