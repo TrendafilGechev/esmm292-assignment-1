@@ -1,5 +1,5 @@
 /******************************************************************************************************************
- * File:SourceFilter.java
+ * File:SourceFilterA.java
  * Course: 17655
  * Project: Assignment 1
  * Copyright: Copyright (c) 2003 Carnegie Mellon University
@@ -16,7 +16,7 @@
  * Internal Methods: None
  *
  ******************************************************************************************************************/
-package systemB;
+package systemC;
 
 import systemA.Filter;
 import systemA.IdData;
@@ -26,9 +26,10 @@ import java.io.*; // note we must add this here since we use BufferedReader clas
 import java.time.Duration;
 import java.time.Instant;
 
-public class SourceFilter extends Filter {
+public class SourceFilterA extends Filter {
     public void run() {
-        String fileName = "src/FlightData.dat";    // Input data file.
+
+        String fileName = "src/systemC/SubSetA.dat";    // Input data file.
         Instant start = Instant.now();
         try {
             /***********************************************************************************
@@ -36,7 +37,7 @@ public class SourceFilter extends Filter {
              ***********************************************************************************/
 
             in = new DataInputStream(new FileInputStream(fileName));
-            System.out.println("\n" + this.getName() + "::Source reading file..." + "\n");
+            System.out.println("\n" + this.getName() + "::Source A reading file..." + "\n");
 
             /***********************************************************************************
              *	Here we read the data from the file and send it out the filter's output port one
@@ -44,10 +45,11 @@ public class SourceFilter extends Filter {
              ***********************************************************************************/
 
             while (true) {
+                // input port not actually used since this is source filter
                 IdData idData = readId(this.InputReadPortA);
                 MeasurementData measurementData = readMeasurement(this.InputReadPortA);
 
-                if (idData.id != Ids.Velocity.ordinal() && idData.id != Ids.Attitude.ordinal()) {
+                if (idData.id != Ids.Velocity.ordinal()) {
                     writeId(idData.bytes);
                     writeMeasurement(measurementData.bytes);
                 }
@@ -80,4 +82,4 @@ public class SourceFilter extends Filter {
             throw new RuntimeException(e);
         }
     } // run
-} // SourceFilter
+} // SourceFilterA

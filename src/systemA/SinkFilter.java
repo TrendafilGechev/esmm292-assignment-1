@@ -35,7 +35,8 @@ import java.util.*;                        // This class is used to interpret ti
 import java.text.SimpleDateFormat;        // This class is used to format and write time in a string format.
 
 public class SinkFilter extends Filter {
-    @Override public void run() {
+    @Override
+    public void run() {
         /************************************************************************************
          *	TimeStamp is used to compute time using java.util's Calendar class.
          * 	TimeStampFormat is used to format the time value so that it can be easily printed
@@ -52,20 +53,19 @@ public class SinkFilter extends Filter {
 
         boolean readTemperature = false;
         boolean readAltitude = false;
+        boolean appendFile = false;
 
         /*************************************************************
          *	First we announce to the world that we are alive...
          **************************************************************/
 
         System.out.print("\n" + this.getName() + "::Sink Reading " + "\n");
-        outputLine.append("Time: ").append("\t\t\t\t\t\t\t\t").append("Meters: ").append("\t\t\t\t\t").append("Temperature (C): ").append("\t\t\t\t\t");
+        outputLine.append("Time: ").append("\t\t\t\t\t\t\t\t").append("Altitude (m): ").append("\t\t\t\t").append("Temperature (C): ").append("\t\t\t\t\t");
         outputLine.append("\n");
         while (true) {
             try {
-                id = 0;
-                measurement = 0;
-                readId();
-                readMeasurement();
+                IdData idData = readId(this.InputReadPortA);
+                MeasurementData measurementData = readMeasurement(this.InputReadPortA);
 
                 /****************************************************************************
                  // Here we look for an ID of 0 which indicates this is a time measurement.
@@ -80,8 +80,8 @@ public class SinkFilter extends Filter {
                 String formattedTime;
                 String formattedTemp;
                 String formattedAltitude;
-                if (id == Ids.Time.ordinal()) {
-                    TimeStamp.setTimeInMillis(measurement);
+                if (idData.id == Ids.Time.ordinal()) {
+                    TimeStamp.setTimeInMillis(measurementData.measurement);
                     formattedTime = TimeStampFormat.format(TimeStamp.getTime());
                     outputLine.append(formattedTime).append("\t\t\t\t\t");
                 } // if
@@ -96,28 +96,28 @@ public class SinkFilter extends Filter {
                  // in.
                  ****************************************************************************/
 
-                else if (id == Ids.Temperature.ordinal()) {
-                    double temp = Double.longBitsToDouble(measurement);
-                     formattedTemp = df.format(temp);
-                    outputLine.append(formattedTemp).append("\t\t\t\t\t");
-                     readTemperature = true;
+                else if (idData.id == Ids.Temperature.ordinal()) {
+                    double temp = Double.longBitsToDouble(measurementData.measurement);
+                    formattedTemp = df.format(temp);
+                    outputLine.append(formattedTemp).append("\t" + "\t" + "\t" + "\t" + "\t");
+                    readTemperature = true;
+                } // if
+
+                else if (idData.id == Ids.Altitude.ordinal()) {
+                    double altitude = Double.longBitsToDouble(measurementData.measurement);
+                    formattedAltitude = df.format(altitude);
+                    outputLine.append(formattedAltitude).append("\t" + "\t" + "\t" + "\t" + "\t");
+                    readAltitude = true;
                 }
 
-                else if (id == Ids.Altitude.ordinal()) {
-                        double altitude = Double.longBitsToDouble(measurement);
-                        formattedAltitude = df.format(altitude);
-                        outputLine.append(formattedAltitude).append("\t\t\t\t\t");
-                        readAltitude = true;
-                    }
-
                 if (readTemperature && readAltitude) {
-                    System.out.println(outputLine);
                     readTemperature = false;
                     readAltitude = false;
                     outputLine.append("\n");
-                    writeOutputToFile(outputLine);
+                    writeOutputToFile(outputLine, appendFile);
+                    outputLine = new StringBuilder();
+                    appendFile = true;
                 }
-
             } // try
 
             /*******************************************************************************
@@ -133,18 +133,16 @@ public class SinkFilter extends Filter {
         } // while
     } // run
 
-    private void writeOutputToFile(StringBuilder outputLine) {
+    private void writeOutputToFile(StringBuilder outputLine, boolean append) {
         FileWriter writer = null;
         try {
-            writer = new FileWriter("OutputA.txt");
-            System.out.print("\n" + this.getName() + "::Sink Writing to file" + "\n" + outputLine.toString());
-            writer.write(outputLine.toString());
+            writer = new FileWriter("OutputA.txt", append);
+            writer.append(outputLine);
         } catch (IOException e) {
             System.err.println("IO Error in SinkFilter: " + e.getMessage());
         }
         try {
             if (writer != null) {
-                System.out.print("\n" + this.getName() + "::Sink Closing writer" + "\n");
                 writer.close();
             }
         } catch (IOException e) {

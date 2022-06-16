@@ -1,6 +1,7 @@
-package systemB;
+package systemC;
 
 import systemA.Filter;
+import systemB.Frame;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -8,48 +9,54 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 
-public class PressureFilter extends Filter {
-
-    public PressureFilter(double lowerLimit, double upperLimit, int[] idsToRead) {
+public class AttitudePressureFilter extends Filter {
+    public AttitudePressureFilter(double attitudeLimit, double pressureLimit, int[] idsToRead) {
         super(idsToRead);
-        this.lowerLimit = lowerLimit;
-        this.upperLimit = upperLimit;
+        this.attitudeLimit = attitudeLimit;
+        this.pressureLimit = pressureLimit;
     }
 
-    double lowerLimit;
-    double upperLimit;
+    double pressureLimit;
+    double attitudeLimit;
+
     ArrayList<Frame> invalidFrames = new ArrayList<>();
     Frame currentFrame;
     long firstValidPressure = -1;
     long secondValidPressure = -1;
 
+    long firstValidAttitude = -1;
+    long secondValidAttitude = -1;
 
     private void processFrame() throws EndOfStreamException, IOException {
         this.currentFrame = readFrame();
         double pressure = Double.longBitsToDouble(currentFrame.getPressure());
-        if (pressure > upperLimit || pressure < lowerLimit) {
+        pressure = Math.abs(pressure);
+        double attitude = Double.longBitsToDouble(currentFrame.getAttitude());
+        if (pressure > pressureLimit && attitude > attitudeLimit) {
             invalidFrames.add(currentFrame);
             processFrame();
         } else if (invalidFrames.size() == 0 || firstValidPressure == -1) {
             firstValidPressure = currentFrame.getPressure();
+            firstValidAttitude = currentFrame.getAttitude();
         } else {
             secondValidPressure = currentFrame.getPressure();
+            secondValidAttitude = currentFrame.getAttitude();
         }
     }
 
-    private byte[] getValidPressureBytes() {
-        double validPressure;
-        if (secondValidPressure == -1) {
-            validPressure = Double.longBitsToDouble(firstValidPressure);
+    private byte[] getValidMeasurementBytes(long firstValue, long secondValue) {
+        double validMeasurement;
+        if (secondValue == -1) {
+            validMeasurement = Double.longBitsToDouble(firstValue);
         } else {
-            double firstPressure = Double.longBitsToDouble(firstValidPressure);
-            double secondPressure = Double.longBitsToDouble(secondValidPressure);
-            validPressure = (firstPressure + secondPressure) / 2;
+            double firstMeasurement = Double.longBitsToDouble(firstValue);
+            double secondMeasurement = Double.longBitsToDouble(secondValue);
+            validMeasurement = (firstMeasurement + secondMeasurement) / 2;
         }
-        validPressure = -validPressure;
-        long validPressureLng = Double.doubleToLongBits(validPressure);
+        validMeasurement = -validMeasurement;
+        long validMeasurementLng = Double.doubleToLongBits(validMeasurement);
         ByteBuffer pressureBuff = ByteBuffer.allocate(Long.BYTES);
-        pressureBuff.putLong(validPressureLng);
+        pressureBuff.putLong(validMeasurementLng);
         return pressureBuff.array();
     }
 
@@ -57,10 +64,11 @@ public class PressureFilter extends Filter {
         invalidFrames.clear();
         if (secondValidPressure != -1) {
             firstValidPressure = secondValidPressure;
+            firstValidAttitude = secondValidAttitude;
         }
         secondValidPressure = -1;
+        secondValidAttitude = -1;
     }
-
 
     public void run() {
         Instant start = Instant.now();
@@ -71,7 +79,8 @@ public class PressureFilter extends Filter {
                 processFrame();
                 if (invalidFrames.size() != 0) {
                     for (Frame corrected : invalidFrames) {
-                        corrected.setPressureBytes(getValidPressureBytes());
+                        corrected.setPressureBytes(getValidMeasurementBytes(firstValidPressure, secondValidPressure));
+                        corrected.setAttitudeBytes(getValidMeasurementBytes(firstValidAttitude, secondValidAttitude));
                         writeFrame(corrected);
                     }
                     resetInvalidFrameState();
@@ -82,7 +91,8 @@ public class PressureFilter extends Filter {
             catch (EndOfStreamException | IOException e) {
                 if (invalidFrames.size() != 0) {
                     for (Frame corrected : invalidFrames) {
-                        corrected.setPressureBytes(getValidPressureBytes());
+                        corrected.setPressureBytes(getValidMeasurementBytes(firstValidPressure, secondValidPressure));
+                        corrected.setAttitudeBytes(getValidMeasurementBytes(firstValidAttitude, secondValidAttitude));
                         try {
                             writeFrame(corrected);
                         } catch (IOException ex) {
@@ -91,7 +101,7 @@ public class PressureFilter extends Filter {
                     }
                 }
                 ClosePorts();
-                System.out.print("\n" + this.getName() + "::Pressure Exiting; bytes read: " + bytesRead + " bytes written: " + bytesWritten + " Duration in milliseconds: " + Duration.between(start, Instant.now()).toMillis() + "\n");
+                System.out.print("\n" + this.getName() + "::AttitudePressure Exiting; bytes read: " + bytesRead + " bytes written: " + bytesWritten + " Duration in milliseconds: " + Duration.between(start, Instant.now()).toMillis() + "\n");
                 break;
             } // catch
         } // while

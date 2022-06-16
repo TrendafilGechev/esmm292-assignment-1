@@ -26,7 +26,6 @@ public class SourceFilter extends Filter {
 
     @Override
     public void run() {
-
         String fileName = "src/FlightData.dat";    // Input data file.
         Instant start = Instant.now();
         try {
@@ -43,18 +42,14 @@ public class SourceFilter extends Filter {
              ***********************************************************************************/
 
             while (true) {
-                readId();
-                readMeasurement();
+                IdData idData = readId(this.InputReadPortA);
+                MeasurementData measurementData = readMeasurement(this.InputReadPortA);
 
-                if (id == Ids.Altitude.ordinal() || id == Ids.Temperature.ordinal() || id == Ids.Time.ordinal()) {
-                    writeId(idData);
-                    writeMeasurement(measurementData);
-                } else {
-                    id = 0;
-                    measurement = 0;
+                if (idData.id == Ids.Altitude.ordinal() || idData.id == Ids.Temperature.ordinal() || idData.id == Ids.Time.ordinal()) {
+                    writeId(idData.bytes);
+                    writeMeasurement(measurementData.bytes);
                 }
             } // while
-
         } //try
 
         /***********************************************************************************
@@ -67,28 +62,21 @@ public class SourceFilter extends Filter {
                 in.close();
                 ClosePorts();
                 System.out.println("\n" + this.getName() + "::Read file complete, bytes read::" + bytesRead + " bytes written: " + bytesWritten + " Duration in milliseconds: " + Duration.between(start, Instant.now()).toMillis() + "\n");
-
             }
             /***********************************************************************************
              *	The following exception is raised should we have a problem closing the file.
              ***********************************************************************************/ catch (
                     Exception closeerr) {
                 System.out.println("\n" + this.getName() + "::Problem closing input data file::" + closeerr);
-
             } // catch
-
         } // catch
-
         /***********************************************************************************
          *	The following exception is raised should we have a problem openinging the file.
          ***********************************************************************************/ catch (IOException iox) {
             System.out.println("\n" + this.getName() + "::Problem reading input data file::" + iox);
-
         } // catch
         catch (EndOfStreamException e) {
             throw new RuntimeException(e);
         }
-
     } // run
-
 } // SourceFilter
