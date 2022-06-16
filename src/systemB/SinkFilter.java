@@ -59,16 +59,23 @@ public class SinkFilter extends Filter {
         boolean readAltitude = false;
         boolean readPressure = false;
 
+		boolean appendMain = false;
+		boolean appendRejected = false;
+
+		double currentPressure = 0;
+
         /*************************************************************
          *	First we announce to the world that we are alive...
          **************************************************************/
 
 		System.out.print("\n" + this.getName() + "::Sink Reading " + "\n");
-		outputLine.append("Time: ").append("\t\t\t\t\t\t\t\t").append("Meters: ").append("\t\t\t\t\t").append("Pressure (psi): ").append("\t\t\t").append("Temperature (C): ").append("\t\t\t\t\t");
+		outputLine.append("Time: ").append("\t\t\t\t\t\t\t\t").append("Altitude (m): ").append("\t\t\t\t").append("Temperature (C): ").append("\t\t\t").append("Pressure (psi): ").append("\t\t\t\t\t");
 		outputLine.append("\n");
 
 		outputLinePressure.append("Time: ").append("\t\t\t\t\t\t\t\t").append("Pressure (psi): ").append("\t\t\t");
 		outputLinePressure.append("\n");
+
+		String formattedTime = "";
 
         while (true) {
             try {
@@ -86,15 +93,13 @@ public class SinkFilter extends Filter {
                  // illustrated below.
                  ****************************************************************************/
 
-				String formattedTime;
+
 				String formattedTemp;
 				String formattedAltitude;
-				String formattedPressure;
 				if (idData.id == Ids.Time.ordinal()) {
 					TimeStamp.setTimeInMillis(measurementData.measurement);
 					formattedTime = TimeStampFormat.format(TimeStamp.getTime());
 					outputLine.append(formattedTime).append("\t\t\t\t\t");
-					outputLinePressure.append(formattedTime).append("\t\t\t\t\t");
 				}
 
                 /****************************************************************************
@@ -122,9 +127,7 @@ public class SinkFilter extends Filter {
 				}
 
 				else if (idData.id == Ids.Pressure.ordinal()) {
-					double pressure = Double.longBitsToDouble(measurementData.measurement);
-					formattedPressure = df.format(pressure);
-					formatPressureWildPoints(outputLine, outputLinePressure, formattedPressure);
+					currentPressure = Double.longBitsToDouble(measurementData.measurement);
 					readPressure = true;
 				}
 
@@ -133,11 +136,25 @@ public class SinkFilter extends Filter {
 					readTemperature = false;
 					readAltitude = false;
 					readPressure = false;
-					outputLine.append("\n");
-					outputLinePressure.append("\n");
-					writeOutputToFile(outputLine, "OutputB.txt");
-					writeOutputToFile(outputLinePressure, "OutputPressure.txt");
 
+					double absPressure = Math.abs(currentPressure);
+					String formattedPressure = df.format(absPressure);
+					if (currentPressure < 0) {
+						outputLinePressure.append(formattedTime).append("\t\t\t\t\t");
+						outputLinePressure.append(formattedPressure);
+						outputLine.append(formattedPressure).append("*").append("\t\t\t\t\t");
+						outputLinePressure.append("\n");
+						writeOutputToFile(outputLinePressure, "OutputB-Rejected.txt", appendRejected);
+						outputLinePressure = new StringBuilder();
+						appendRejected = true;
+					} else {
+						outputLine.append(formattedPressure).append("\t\t\t\t\t");
+					}
+
+					outputLine.append("\n");
+					writeOutputToFile(outputLine, "OutputB.txt", appendMain);
+					appendMain = true;
+					outputLine = new StringBuilder();
 				}
 			} // try
 			/*******************************************************************************
@@ -153,22 +170,10 @@ public class SinkFilter extends Filter {
 		} // while
 	}// run
 
-	private void formatPressureWildPoints(StringBuilder outputLine, StringBuilder outputlinePressure, String formattedPressure) {
-		double formattedPressureDouble = Double.parseDouble(formattedPressure);
-		if (formattedPressureDouble < 0) {
-			formattedPressureDouble = Math.abs(formattedPressureDouble);
-			outputlinePressure.append(formattedPressureDouble);
-			outputLine.append(Math.abs(formattedPressureDouble)).append("*").append("\t\t\t\t\t");
-		} else {
-			outputLine.append(formattedPressure).append("\t\t\t\t\t");
-			outputlinePressure.delete(outputlinePressure.length()-22, outputlinePressure.length());
-		}
-	}
-
-	private void writeOutputToFile(StringBuilder outputLine, String fileName) {
+	private void writeOutputToFile(StringBuilder outputLine, String fileName, boolean append) {
 		FileWriter writer = null;
 		try {
-			writer = new FileWriter(fileName);
+			writer = new FileWriter(fileName, append);
 			System.out.print("\n" + this.getName() + "::Sink Writing to file" + "\n" + outputLine.toString());
 			writer.write(outputLine.toString());
 		} catch (IOException e) {
